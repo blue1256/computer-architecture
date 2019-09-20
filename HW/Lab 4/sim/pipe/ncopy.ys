@@ -1,0 +1,129 @@
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len words to dst.
+# Return the number of positive words (>0) contained in src.
+#
+# Include your name and ID here.
+#2017-11522 Park Jong Seok
+# Describe how and why you modified the baseline code.
+# 1. Loop unrolling by 8 elements
+# 2. Rearranged position of mrmovq and rmmovq related to the same register to avoid bubble
+# 3. Used jump table to minimize mispredicted jump
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = src, %rsi = dst, %rdx = len
+ncopy:
+
+##################################################################
+# You can modify this portion
+	# Loop header
+	xorq %rax, %rax		# count = 0
+	iaddq $-8, %rdx		# len-=8
+	jl Left			# if len<0 goto Left
+Loop:	mrmovq (%rdi), %r8 	# read val from src...
+	mrmovq 8(%rdi), %r9	# read val from src+1...
+	rmmovq %r8, (%rsi)	# ...and store it to dst
+	rmmovq %r9, 8(%rsi)	# ...and store it to dst+1
+	andq %r8, %r8		# if val <= 0
+	jle NPos1		# goto NPos1
+	iaddq $1, %rax		# count++
+NPos1:	andq %r9, %r9
+	jle NPos2
+	iaddq $1, %rax	
+NPos2:	mrmovq 16(%rdi), %r8 	
+	mrmovq 24(%rdi), %r9
+	rmmovq %r8, 16(%rsi)
+	rmmovq %r9, 24(%rsi)
+	andq %r8, %r8
+	jle NPos3
+	iaddq $1, %rax
+NPos3:	andq %r9, %r9
+	jle NPos4
+	iaddq $1, %rax
+NPos4:	mrmovq 32(%rdi), %r8
+	mrmovq 40(%rdi), %r9
+	rmmovq %r8, 32(%rsi)	
+	rmmovq %r9, 40(%rsi)	
+	andq %r8, %r8
+	jle NPos5
+	iaddq $1, %rax
+NPos5:	andq %r9, %r9
+	jle NPos6
+	iaddq $1, %rax
+NPos6:	mrmovq 48(%rdi), %r8
+	mrmovq 56(%rdi), %r9
+	rmmovq %r8, 48(%rsi)
+	rmmovq %r9, 56(%rsi)
+	andq %r8, %r8
+	jle NPos7
+	iaddq $1, %rax
+NPos7:	andq %r9, %r9
+	jle Check
+	iaddq $1, %rax
+Check:	iaddq $64, %rdi		# src+=8
+	iaddq $64, %rsi		# dst+=8
+	iaddq $-8, %rdx		# len-=8
+	jge Loop		# if len>=0, goto Loop:
+Left:	addq %rdx, %rdx
+	addq %rdx, %rdx
+	addq %rdx, %rdx
+	mrmovq JMPTE(%rdx), %rdx
+	pushq %rdx
+	ret
+Left7:	mrmovq 48(%rdi), %r8
+	rmmovq %r8, 48(%rsi)
+	andq %r8, %r8
+	jle Left6
+	iaddq $1, %rax
+Left6:	mrmovq 40(%rdi), %r9
+	rmmovq %r9, 40(%rsi)
+	andq %r9, %r9
+	jle Left5
+	iaddq $1, %rax
+Left5:	mrmovq 32(%rdi), %r8
+	rmmovq %r8, 32(%rsi)
+	andq %r8, %r8
+	jle Left4
+	iaddq $1, %rax
+Left4:	mrmovq 24(%rdi), %r9
+	rmmovq %r9, 24(%rsi)
+	andq %r9, %r9
+	jle Left3
+	iaddq $1, %rax
+Left3:	mrmovq 16(%rdi), %r8
+	rmmovq %r8, 16(%rsi)
+	andq %r8, %r8
+	jle Left2
+	iaddq $1, %rax
+Left2:	mrmovq 8(%rdi), %r9
+	rmmovq %r9, 8(%rsi)
+	andq %r9, %r9
+	jle Left1
+	iaddq $1, %rax
+Left1:	mrmovq (%rdi), %r8
+	rmmovq %r8, (%rsi)
+	andq %r8, %r8
+	jle Done
+	iaddq $1, %rax
+	jmp Done
+.align 8
+JMPTS:	
+	.quad	Done
+	.quad	Left1
+	.quad	Left2
+	.quad	Left3
+	.quad	Left4
+	.quad	Left5
+	.quad	Left6
+	.quad	Left7
+JMPTE:	.quad	Done
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+#/* $end ncopy-ys */

@@ -1,0 +1,55 @@
+#2017-11522 PARK JONG SEOK
+# Initial code
+	irmovq Stack,%rsp
+	irmovq $3,%rdx
+	irmovq dest,%rsi
+	irmovq src,%rdi
+	call copy_block
+	halt
+
+.align 8
+# Source array
+src:
+	.quad 0x00a
+	.quad 0x0b0
+	.quad 0xc00
+
+# Destination array
+dest:
+	.quad 0x111
+	.quad 0x222
+	.quad 0x333
+
+# long copy_block(long *src, long *dest, long len)
+# src in %rdi, dest in %rsi, len in %rdx
+copy_block:
+	pushq %rbx
+	pushq %rcx
+	pushq %r8
+	xorq %rcx,%rcx
+	xorq %r8,%r8
+	xorq %rax,%rax
+	irmovq -1,%r8
+	irmovq 8,%rcx
+loop:
+	mrmovq (%rdi),%rbx
+	rmmovq %rbx,(%rsi)
+	xorq %rbx,%rax
+	addq %rcx,%rdi
+	addq %rcx,%rsi
+	addq %r8,%rdx
+	jne loop
+done:
+	popq %r8
+	popq %rcx
+	popq %rbx
+	ret			# Return
+
+.pos 0x100
+Stack:
+
+
+
+
+
+
